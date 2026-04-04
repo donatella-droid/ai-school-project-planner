@@ -1,11 +1,14 @@
 import type { ProjectCourse } from '@/stores/project-store'
-import { costoTotaleCorso, costoDirettoCorso, costoIndirettoCorso, fmtEur, MAX_PROGETTO } from '@/lib/costs'
+import { costoTotaleCorso, costoDirettoCorso, costoIndirettoCorso, fmtEur, MAX_PROGETTO, UCS_FORMATORE, UCS_TUTOR, QUOTA_INDIRETTI } from '@/lib/costs'
+import * as XLSX from 'xlsx'
 
 interface Props {
   courses: ProjectCourse[]
+  schoolName: string
+  projectTitle: string
 }
 
-export function BudgetSummary({ courses }: Props) {
+export function BudgetSummary({ courses, schoolName, projectTitle }: Props) {
   const percorsi = courses.filter((c) => c.type === 'P')
   const laboratori = courses.filter((c) => c.type === 'L')
 
@@ -26,9 +29,110 @@ export function BudgetSummary({ courses }: Props) {
   const totaleAttestatiP = percorsi.reduce((s, c) => s + c.participants, 0)
   const totaleAttestatiL = laboratori.reduce((s, c) => s + c.participants, 0)
 
+  const handleExportExcel = () => {
+    const wb = XLSX.utils.book_new()
+
+    // --- Sheet 1: Riepilogo ---
+    const riepilogo = [
+      ['BUDGET PROGETTO DM 219/2025'],
+      ['Scuola', schoolName],
+      ['Progetto', projectTitle],
+      ['Data export', new Date().toLocaleDateString('it-IT')],
+      [],
+      ['RIEPILOGO'],
+      ['', 'Costi diretti', 'Costi indiretti (40%)', 'Totale', 'Ore', 'Attestati'],
+      ['Percorsi (P)', direttiPercorsi, indirettiPercorsi, totalePercorsi, totaleOreP, totaleAttestatiP],
+      ['Laboratori (L)', direttiLab, indirettiLab, totaleLaboratori, totaleOreL, totaleAttestatiL],
+      ['TOTALE', direttiPercorsi + direttiLab, indirettiPercorsi + indirettiLab, totale, totaleOreP + totaleOreL, totaleAttestatiP + totaleAttestatiL],
+      [],
+      ['Budget massimo', MAX_PROGETTO],
+      ['Residuo', MAX_PROGETTO - totale],
+      ['% utilizzato', percentUsed / 100],
+      ['% laboratori su totale', quotaLab / 100],
+    ]
+    const wsRiepilogo = XLSX.utils.aoa_to_sheet(riepilogo)
+    wsRiepilogo['!cols'] = [{ wch: 22 }, { wch: 16 }, { wch: 20 }, { wch: 16 }, { wch: 8 }, { wch: 10 }]
+    // Format currency cells
+    const currencyFmt = '#.##0,00 €'
+    for (let r = 7; r <= 9; r++) {
+      for (let c = 1; c <= 3; c++) {
+        const cell = XLSX.utils.encode_cell({ r, c })
+        if (wsRiepilogo[cell]) wsRiepilogo[cell].z = currencyFmt
+      }
+    }
+    for (const r of [11, 12]) {
+      const cell = XLSX.utils.encode_cell({ r, c: 1 })
+      if (wsRiepilogo[cell]) wsRiepilogo[cell].z = currencyFmt
+    }
+    for (const r of [13, 14]) {
+      const cell = XLSX.utils.encode_cell({ r, c: 1 })
+      if (wsRiepilogo[cell]) wsRiepilogo[cell].z = '0,0%'
+    }
+    XLSX.utils.book_append_sheet(wb, wsRiepilogo, 'Riepilogo')
+
+    // --- Sheet 2: Dettaglio corsi ---
+    const header = ['Tipo', 'Codice', 'Nome corso', 'Ore', 'Partecipanti', 'Form. formatori', 'Costo formatore/h', 'Costo tutor/h', 'Costi diretti', 'Costi indiretti (40%)', 'Costo totale']
+    const rows = courses.map((c) => [
+      c.type === 'P' ? 'Percorso' : 'Laboratorio',
+      c.catalogId ?? 'Personalizzato',
+      c.name,
+      c.hours,
+      c.participants,
+      c.isFormazioneFormatori ? 'Sì' : 'No',
+      UCS_FORMATORE,
+      c.type === 'P' ? UCS_TUTOR : 0,
+      costoDirettoCorso(c.type, c.hours),
+      costoIndirettoCorso(c.type, c.hours),
+      costoTotaleCorso(c.type, c.hours),
+    ])
+
+    const dettaglio = [header, ...rows]
+    const wsDettaglio = XLSX.utils.aoa_to_sheet(dettaglio)
+    wsDettaglio['!cols'] = [
+      { wch: 12 }, { wch: 16 }, { wch: 50 }, { wch: 6 }, { wch: 14 },
+      { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 20 }, { wch: 16 },
+    ]
+    XLSX.utils.book_append_sheet(wb, wsDettaglio, 'Dettaglio corsi')
+
+    // --- Sheet 3: Parametri UCS ---
+    const parametri = [
+      ['PARAMETRI UCS — Bando DM 219/2025'],
+      [],
+      ['Figura', 'Costo orario'],
+      ['Formatore', UCS_FORMATORE],
+      ['Tutor (solo Percorsi)', UCS_TUTOR],
+      [],
+      ['Quota costi indiretti', QUOTA_INDIRETTI],
+      [],
+      ['Tipo attività', 'Costo diretto/h', 'Costi indiretti/h', 'Costo totale/h'],
+      ['Percorso (P)', UCS_FORMATORE + UCS_TUTOR, (UCS_FORMATORE + UCS_TUTOR) * QUOTA_INDIRETTI, (UCS_FORMATORE + UCS_TUTOR) * (1 + QUOTA_INDIRETTI)],
+      ['Laboratorio (L)', UCS_FORMATORE, UCS_FORMATORE * QUOTA_INDIRETTI, UCS_FORMATORE * (1 + QUOTA_INDIRETTI)],
+      [],
+      ['Budget massimo progetto', MAX_PROGETTO],
+      ['Quota minima laboratori', '50%'],
+      ['Min. partecipanti Percorso', 10],
+      ['Min. partecipanti Laboratorio', 5],
+      ['Min. attestati totali', 50],
+    ]
+    const wsParametri = XLSX.utils.aoa_to_sheet(parametri)
+    wsParametri['!cols'] = [{ wch: 28 }, { wch: 18 }, { wch: 18 }, { wch: 18 }]
+    XLSX.utils.book_append_sheet(wb, wsParametri, 'Parametri UCS')
+
+    const fileName = `budget-${schoolName.replace(/\s+/g, '-').toLowerCase()}.xlsx`
+    XLSX.writeFile(wb, fileName)
+  }
+
   return (
     <div className="rounded-xl border border-border bg-background p-5 space-y-5">
-      <h3 className="text-sm font-semibold">Riepilogo Budget</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Riepilogo Budget Complessivo</h3>
+        <button
+          onClick={handleExportExcel}
+          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+        >
+          Esporta Excel
+        </button>
+      </div>
 
       {/* Progress bar */}
       <div>

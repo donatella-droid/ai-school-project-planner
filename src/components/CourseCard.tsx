@@ -1,5 +1,6 @@
 import { useProjectStore, type ProjectCourse } from '@/stores/project-store'
 import { costoTotaleCorso, breakdownCorso, fmtEur } from '@/lib/costs'
+import { CATALOG } from '@/lib/catalog'
 
 interface Props {
   course: ProjectCourse
@@ -56,9 +57,29 @@ export function CourseCard({ course, projectId, onRemove }: Props) {
         <div>
           <label className="mb-0.5 block text-[10px] text-muted-foreground">Ore</label>
           {course.catalogId ? (
-            <div className="w-16 rounded-md border border-border bg-muted px-2 py-1 text-sm text-muted-foreground cursor-not-allowed" title="La durata dei corsi FEM non è modificabile">
-              {course.hours}
-            </div>
+            (() => {
+              const defaultH = CATALOG.find(c => c.id === course.catalogId)?.defaultHours ?? course.hours
+              const minH = Math.max(1, defaultH - 2)
+              const maxH = defaultH + 3
+              return (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    value={course.hours}
+                    onChange={(e) => {
+                      const v = Number(e.target.value)
+                      update({ hours: Math.max(minH, Math.min(maxH, v)) })
+                    }}
+                    min={minH}
+                    max={maxH}
+                    className="w-16 rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-primary"
+                  />
+                  <span className="text-[9px] text-muted-foreground whitespace-nowrap">
+                    {minH}–{maxH}h
+                  </span>
+                </div>
+              )
+            })()
           ) : (
             <input
               type="number"
@@ -83,30 +104,37 @@ export function CourseCard({ course, projectId, onRemove }: Props) {
           <label className="mb-0.5 block text-[10px] text-muted-foreground">Tipo</label>
           <select
             value={course.type}
-            onChange={(e) => update({ type: e.target.value as 'P' | 'L' })}
+            onChange={(e) => {
+              const newType = e.target.value as 'P' | 'L'
+              update({ type: newType, ...(newType === 'L' ? { isFormazioneFormatori: false } : {}) })
+            }}
             className="rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-primary bg-background"
           >
             <option value="P">Percorso (P)</option>
             <option value="L">Laboratorio (L)</option>
           </select>
         </div>
-        <div className="flex items-center gap-1.5">
-          <label className="flex cursor-pointer items-center gap-1.5 text-xs">
-            <input
-              type="checkbox"
-              checked={course.isFormazioneFormatori}
-              onChange={(e) => update({ isFormazioneFormatori: e.target.checked })}
-              className="rounded"
-            />
-            Formazione formatori
-          </label>
-          <span
-            className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-bold text-muted-foreground cursor-help"
-            title="Il bando richiede almeno 1 percorso (P) dedicato alla formazione dei formatori: docenti che poi faranno da moltiplicatori interni, trasferendo le competenze ai colleghi del proprio istituto. Seleziona questa opzione sul percorso che la scuola intende dedicare a questo scopo."
-          >
-            i
-          </span>
-        </div>
+        {course.type === 'P' && (
+          <div className="flex items-center gap-1.5">
+            <label className="flex cursor-pointer items-center gap-1.5 text-xs">
+              <input
+                type="checkbox"
+                checked={course.isFormazioneFormatori}
+                onChange={(e) => update({ isFormazioneFormatori: e.target.checked })}
+                className="rounded"
+              />
+              Formazione formatori
+            </label>
+            <span className="relative group">
+              <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-bold text-muted-foreground cursor-help">
+                i
+              </span>
+              <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-72 -translate-x-1/2 rounded-lg bg-foreground px-3 py-2 text-xs leading-relaxed text-background opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                Il bando richiede almeno 1 percorso (P) dedicato alla formazione dei formatori: docenti che poi faranno da moltiplicatori interni, trasferendo le competenze ai colleghi. Seleziona questa opzione sul percorso che la scuola intende dedicare a questo scopo.
+              </span>
+            </span>
+          </div>
+        )}
         <div className="ml-auto">
           <button
             onClick={onRemove}

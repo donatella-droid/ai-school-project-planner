@@ -20,7 +20,10 @@ export function CoursePicker({ projectId, existingCourses }: Props) {
   const [customType, setCustomType] = useState<CourseType>('P')
   const [customHours, setCustomHours] = useState(10)
 
-  const existingIds = new Set(existingCourses.map((c) => c.catalogId))
+  const catalogCounts = existingCourses.reduce<Record<string, number>>((acc, c) => {
+    if (c.catalogId) acc[c.catalogId] = (acc[c.catalogId] ?? 0) + 1
+    return acc
+  }, {})
 
   const filteredCatalog = CATALOG.filter((c) => {
     if (filterArea !== null && c.area !== filterArea) return false
@@ -181,12 +184,11 @@ export function CoursePicker({ projectId, existingCourses }: Props) {
                   </div>
                   <div className="space-y-1.5">
                     {courses.map((course) => {
-                      const alreadyAdded = existingIds.has(course.id)
                       return (
                         <CatalogItem
                           key={course.id}
                           course={course}
-                          alreadyAdded={alreadyAdded}
+                          addedCount={catalogCounts[course.id] ?? 0}
                           onAdd={(type) => handleAddFromCatalog(course, type)}
                         />
                       )
@@ -203,18 +205,18 @@ export function CoursePicker({ projectId, existingCourses }: Props) {
 
 function CatalogItem({
   course,
-  alreadyAdded,
+  addedCount,
   onAdd,
 }: {
   course: CatalogCourse
-  alreadyAdded: boolean
+  addedCount: number
   onAdd: (type: CourseType) => void
 }) {
   const [expanded, setExpanded] = useState(false)
 
   return (
     <div className={`rounded-lg border p-3 text-sm transition-colors ${
-      alreadyAdded ? 'border-success/30 bg-success/5' : 'border-border hover:border-primary/30'
+      addedCount > 0 ? 'border-success/30 bg-success/5' : 'border-border hover:border-primary/30'
     }`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
@@ -232,32 +234,30 @@ function CatalogItem({
             <span>{course.target}</span>
             <span>·</span>
             <TypeBadge type={course.allowedTypes} />
+            {addedCount > 0 && (
+              <>
+                <span>·</span>
+                <span className="font-medium text-success">{addedCount}x aggiunto</span>
+              </>
+            )}
           </div>
         </div>
         <div className="flex shrink-0 gap-1.5">
-          {alreadyAdded ? (
-            <span className="rounded bg-success/10 px-2 py-1 text-xs font-medium text-success">
-              Aggiunto
-            </span>
-          ) : (
-            <>
-              {(course.allowedTypes === 'P' || course.allowedTypes === 'P/L') && (
-                <button
-                  onClick={() => onAdd('P')}
-                  className="rounded bg-area-2/10 px-2 py-1 text-xs font-medium text-area-2 hover:bg-area-2/20"
-                >
-                  + P
-                </button>
-              )}
-              {(course.allowedTypes === 'L' || course.allowedTypes === 'P/L') && (
-                <button
-                  onClick={() => onAdd('L')}
-                  className="rounded bg-area-3/10 px-2 py-1 text-xs font-medium text-area-3 hover:bg-area-3/20"
-                >
-                  + L
-                </button>
-              )}
-            </>
+          {(course.allowedTypes === 'P' || course.allowedTypes === 'P/L') && (
+            <button
+              onClick={() => onAdd('P')}
+              className="rounded bg-area-2/10 px-2 py-1 text-xs font-medium text-area-2 hover:bg-area-2/20"
+            >
+              + P
+            </button>
+          )}
+          {(course.allowedTypes === 'L' || course.allowedTypes === 'P/L') && (
+            <button
+              onClick={() => onAdd('L')}
+              className="rounded bg-area-3/10 px-2 py-1 text-xs font-medium text-area-3 hover:bg-area-3/20"
+            >
+              + L
+            </button>
           )}
         </div>
       </div>
