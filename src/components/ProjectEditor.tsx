@@ -75,7 +75,7 @@ export function ProjectEditor({ project, activeTab }: Props) {
 
       {activeTab === 'budget' && (
         <div className="space-y-4">
-          <BudgetSummary courses={project.courses} schoolName={project.schoolName} projectTitle={project.projectTitle} />
+          <BudgetSummary project={project} />
           <FemQuote project={project} />
           <ValidationPanel courses={project.courses} />
         </div>

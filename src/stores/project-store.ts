@@ -23,10 +23,10 @@ export interface TechnologyItem {
   included: boolean
 }
 
-export interface IndirectCostsAllocation {
-  softwarePercent: number   // % dei costi indiretti per licenze software AI
-  organizationPercent: number // % per organizzazione e gestione
-  materialsPercent: number  // % per materiali didattici
+export interface CustomCostItem {
+  id: string
+  title: string
+  amount: number
 }
 
 export interface SchoolProject {
@@ -37,7 +37,7 @@ export interface SchoolProject {
   isMezzogiorno: boolean
   courses: ProjectCourse[]
   technologies: TechnologyItem[]
-  indirectCosts: IndirectCostsAllocation
+  customCosts: CustomCostItem[]
   narrativeTexts: Record<string, string>
   status: 'draft' | 'ready' | 'submitted'
   created_at: string
@@ -61,7 +61,9 @@ interface ProjectStore {
   addTechnology: (projectId: string, tech: Omit<TechnologyItem, 'id'>) => void
   removeTechnology: (projectId: string, techId: string) => void
   toggleTechnology: (projectId: string, techId: string) => void
-  updateIndirectCosts: (projectId: string, allocation: IndirectCostsAllocation) => void
+  addCustomCost: (projectId: string, title: string, amount: number) => void
+  updateCustomCost: (projectId: string, costId: string, updates: Partial<Omit<CustomCostItem, 'id'>>) => void
+  removeCustomCost: (projectId: string, costId: string) => void
   updateNarrativeText: (projectId: string, fieldId: string, text: string) => void
 }
 
@@ -91,7 +93,7 @@ export const useProjectStore = create<ProjectStore>()(
               isMezzogiorno: false,
               courses: [],
               technologies: [],
-              indirectCosts: { softwarePercent: 45, organizationPercent: 35, materialsPercent: 20 },
+              customCosts: [],
               narrativeTexts: {},
               status: 'draft',
               created_at: now(),
@@ -131,7 +133,7 @@ export const useProjectStore = create<ProjectStore>()(
             status: 'draft',
             courses: original.courses.map((c) => ({ ...c, id: generateId() })),
             technologies: original.technologies.map((t) => ({ ...t, id: generateId() })),
-            indirectCosts: { ...original.indirectCosts },
+            customCosts: original.customCosts.map((c) => ({ ...c, id: generateId() })),
             narrativeTexts: { ...original.narrativeTexts },
             created_at: now(),
             updated_at: now(),
@@ -222,11 +224,38 @@ export const useProjectStore = create<ProjectStore>()(
         }))
       },
 
-      updateIndirectCosts: (projectId, allocation) => {
+      addCustomCost: (projectId, title, amount) => {
+        const item: CustomCostItem = { id: generateId(), title, amount }
         set((s) => ({
           projects: s.projects.map((p) =>
             p.id === projectId
-              ? { ...p, indirectCosts: allocation, updated_at: now() }
+              ? { ...p, customCosts: [...p.customCosts, item], updated_at: now() }
+              : p
+          ),
+        }))
+      },
+
+      updateCustomCost: (projectId, costId, updates) => {
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id === projectId
+              ? {
+                  ...p,
+                  customCosts: p.customCosts.map((c) =>
+                    c.id === costId ? { ...c, ...updates } : c
+                  ),
+                  updated_at: now(),
+                }
+              : p
+          ),
+        }))
+      },
+
+      removeCustomCost: (projectId, costId) => {
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id === projectId
+              ? { ...p, customCosts: p.customCosts.filter((c) => c.id !== costId), updated_at: now() }
               : p
           ),
         }))
@@ -248,7 +277,7 @@ export const useProjectStore = create<ProjectStore>()(
     }),
     {
       name: 'ai-school-project-planner',
-      version: 1,
+      version: 2,
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as Record<string, unknown>
         if (version === 0) {
@@ -256,8 +285,19 @@ export const useProjectStore = create<ProjectStore>()(
           state.projects = projects.map((p) => ({
             ...p,
             technologies: (p.technologies as unknown[]) ?? [],
-            indirectCosts: (p.indirectCosts as unknown) ?? { softwarePercent: 45, organizationPercent: 35, materialsPercent: 20 },
+            customCosts: [],
           }))
+        }
+        if (version <= 1) {
+          const projects = (state.projects ?? []) as Record<string, unknown>[]
+          state.projects = projects.map((p) => ({
+            ...p,
+            customCosts: (p.customCosts as unknown[]) ?? [],
+          }))
+          // Remove old indirectCosts field
+          for (const p of state.projects as Record<string, unknown>[]) {
+            delete p.indirectCosts
+          }
         }
         return state as unknown as ProjectStore
       },

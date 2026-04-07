@@ -47,12 +47,15 @@ export function FemQuote({ project }: Props) {
     }
   })
 
+  const { customCosts } = project
+  const totaleCustomCosts = customCosts.reduce((s, c) => s + c.amount, 0)
+
   const totaleCorsiFem = femCourses.reduce((s, c) => s + costoDirettoCorso(c.type, c.hours), 0)
   const totaleTechImponibile = femTechWithPrices.reduce((s, t) => s + t.imponibile, 0)
   const totaleTechIva = femTechWithPrices.reduce((s, t) => s + t.iva, 0)
   const totaleTechIvato = femTechWithPrices.reduce((s, t) => s + t.totale, 0)
-  const totalePreventivo = totaleCorsiFem + totaleTechImponibile
-  const totaleConIva = totaleCorsiFem + totaleTechIvato
+  const totalePreventivo = totaleCorsiFem + totaleTechImponibile + totaleCustomCosts
+  const totaleConIva = totaleCorsiFem + totaleTechIvato + totaleCustomCosts
 
   // ─── XLSX Export ───
   const handleExportExcel = () => {
@@ -90,6 +93,16 @@ export function FemQuote({ project }: Props) {
         rows.push([t.name, t.description, '', t.imponibile, t.iva, t.totale])
       }
       rows.push(['', '', 'Subtotale licenze', totaleTechImponibile, totaleTechIva, totaleTechIvato])
+      rows.push([])
+    }
+
+    if (customCosts.length > 0) {
+      rows.push(['VOCI AGGIUNTIVE'])
+      rows.push(['Voce', '', '', '', 'Importo'])
+      for (const c of customCosts) {
+        rows.push([c.title, '', '', '', c.amount])
+      }
+      rows.push(['', '', '', 'Subtotale voci aggiuntive', totaleCustomCosts])
       rows.push([])
     }
 
@@ -234,6 +247,33 @@ export function FemQuote({ project }: Props) {
               ] }),
               mkCell(fmtEur(totaleTechImponibile), 15, { bold: true, align: AlignmentType.RIGHT }),
               mkCell(fmtEur(totaleTechIva), 15, { bold: true, align: AlignmentType.RIGHT }),
+            ] }),
+          ],
+        }),
+        spacer(200),
+      )
+    }
+
+    // ── Voci aggiuntive ──
+    if (customCosts.length > 0) {
+      docChildren.push(
+        txt('Voci aggiuntive', { bold: true, size: 28 }),
+        spacer(80),
+        new Table({
+          layout: TableLayoutType.FIXED,
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          columnWidths: [7000, 3000],
+          rows: [
+            new TableRow({ cantSplit: true, children: [hdr('Voce', 70), hdr('Importo', 30)] }),
+            ...customCosts.map((c) =>
+              new TableRow({ cantSplit: true, children: [
+                mkCell(c.title, 70),
+                mkCell(fmtEur(c.amount), 30, { align: AlignmentType.RIGHT }),
+              ] })
+            ),
+            new TableRow({ cantSplit: true, children: [
+              mkCell('Subtotale voci aggiuntive', 70, { bold: true, align: AlignmentType.RIGHT }),
+              mkCell(fmtEur(totaleCustomCosts), 30, { bold: true, align: AlignmentType.RIGHT }),
             ] }),
           ],
         }),
@@ -389,7 +429,7 @@ export function FemQuote({ project }: Props) {
     }
   }
 
-  if (femCourses.length === 0 && femTechWithPrices.length === 0) {
+  if (femCourses.length === 0 && femTechWithPrices.length === 0 && customCosts.length === 0) {
     return null
   }
 
@@ -500,6 +540,37 @@ export function FemQuote({ project }: Props) {
                   <td colSpan={2} className="px-3 py-2 text-right text-xs">Subtotale licenze</td>
                   <td className="px-3 py-2 text-right font-mono">{fmtEur(totaleTechImponibile)}</td>
                   <td className="px-3 py-2 text-right font-mono">{fmtEur(totaleTechIva)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Custom costs */}
+      {customCosts.length > 0 && (
+        <div>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+            Voci aggiuntive
+          </h4>
+          <div className="rounded-lg border border-border overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted text-xs text-muted-foreground">
+                  <th className="px-3 py-2 text-left font-medium">Voce</th>
+                  <th className="px-3 py-2 text-right font-medium">Importo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {customCosts.map((c) => (
+                  <tr key={c.id} className="border-t border-border">
+                    <td className="px-3 py-2 font-medium">{c.title}</td>
+                    <td className="px-3 py-2 text-right font-mono">{fmtEur(c.amount)}</td>
+                  </tr>
+                ))}
+                <tr className="border-t border-border bg-muted/50 font-medium">
+                  <td className="px-3 py-2 text-right text-xs">Subtotale voci aggiuntive</td>
+                  <td className="px-3 py-2 text-right font-mono">{fmtEur(totaleCustomCosts)}</td>
                 </tr>
               </tbody>
             </table>

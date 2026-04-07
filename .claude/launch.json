@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "/opt/homebrew/bin/node",
-      "runtimeArgs": ["/Users/ds/Documents/claude_SPM1/ai-school-project-planner/node_modules/.bin/vite", "--port", "5180"],
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "cd /Users/ds/Documents/claude_SPM1/ai-school-project-planner && PATH=/opt/homebrew/bin:$PATH npx vite --port 5180"],
       "port": 5180
     }
   ]

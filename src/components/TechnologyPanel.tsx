@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useProjectStore, type SchoolProject } from '@/stores/project-store'
-import { costoIndirettoCorso, fmtEur } from '@/lib/costs'
 import { FEM_PRODUCTS, type FemProduct } from '@/lib/fem-products'
 
 interface Props {
@@ -11,21 +10,11 @@ export function TechnologyPanel({ project }: Props) {
   const addTechnology = useProjectStore((s) => s.addTechnology)
   const removeTechnology = useProjectStore((s) => s.removeTechnology)
   const toggleTechnology = useProjectStore((s) => s.toggleTechnology)
-  const updateIndirectCosts = useProjectStore((s) => s.updateIndirectCosts)
 
   const [customName, setCustomName] = useState('')
   const [customDesc, setCustomDesc] = useState('')
 
-  // Calculate indirect costs total
-  const totaleIndiretti = project.courses.reduce(
-    (sum, c) => sum + costoIndirettoCorso(c.type, c.hours), 0
-  )
-
-  const { softwarePercent, organizationPercent, materialsPercent } = project.indirectCosts
-  const totalPercent = softwarePercent + organizationPercent + materialsPercent
-
   const existingNames = new Set(project.technologies.map((t) => t.name))
-  const includedTech = project.technologies.filter((t) => t.included)
 
   const handleAddFemProduct = (product: FemProduct) => {
     addTechnology(project.id, {
@@ -48,13 +37,6 @@ export function TechnologyPanel({ project }: Props) {
     setCustomDesc('')
   }
 
-  const handlePercentChange = (field: keyof typeof project.indirectCosts, value: number) => {
-    updateIndirectCosts(project.id, {
-      ...project.indirectCosts,
-      [field]: Math.max(0, Math.min(100, value)),
-    })
-  }
-
   const CATEGORY_STYLES: Record<string, { label: string; color: string }> = {
     'platform-fem': { label: 'Piattaforma FEM', color: 'bg-area-4/10 text-area-4' },
     'other': { label: 'Altro', color: 'bg-muted text-muted-foreground' },
@@ -67,7 +49,6 @@ export function TechnologyPanel({ project }: Props) {
         <h3 className="text-sm font-semibold">Piattaforme FEM</h3>
         <p className="mt-1 text-xs text-muted-foreground">
           Piattaforme AI proprietarie FEM, validate pedagogicamente e testate sul campo.
-          Le licenze rientrano nei costi indiretti (40%) del progetto.
         </p>
 
         <div className="mt-3 space-y-2">
@@ -187,107 +168,6 @@ export function TechnologyPanel({ project }: Props) {
             Aggiungi
           </button>
         </div>
-      </div>
-
-      {/* Indirect Costs Allocation */}
-      <div className="rounded-xl border border-border bg-background p-5">
-        <h3 className="text-sm font-semibold">Pianificazione Costi Indiretti (40%)</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Il 40% dei costi diretti viene riconosciuto automaticamente dalla piattaforma come costi indiretti.
-          Non serve giustificazione analitica, ma è utile pianificare come allocarli internamente.
-        </p>
-
-        {totaleIndiretti > 0 ? (
-          <>
-            <div className="mt-3 text-lg font-bold">
-              {fmtEur(totaleIndiretti)} <span className="text-sm font-normal text-muted-foreground">di costi indiretti disponibili</span>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              <AllocationRow
-                label="Licenze software e applicativi AI"
-                description={`Licenze per ${includedTech.length > 0 ? includedTech.map(t => t.name).join(', ') : 'piattaforme AI'}`}
-                percent={softwarePercent}
-                total={totaleIndiretti}
-                onChange={(v) => handlePercentChange('softwarePercent', v)}
-                color="bg-area-1"
-              />
-              <AllocationRow
-                label="Organizzazione e gestione"
-                description="Coordinamento, segreteria, comunicazione, logistica"
-                percent={organizationPercent}
-                total={totaleIndiretti}
-                onChange={(v) => handlePercentChange('organizationPercent', v)}
-                color="bg-area-3"
-              />
-              <AllocationRow
-                label="Materiali didattici"
-                description="Materiali, stampa, risorse digitali"
-                percent={materialsPercent}
-                total={totaleIndiretti}
-                onChange={(v) => handlePercentChange('materialsPercent', v)}
-                color="bg-area-4"
-              />
-            </div>
-
-            {totalPercent !== 100 && (
-              <div className="mt-2 rounded-md bg-warning/10 px-3 py-2 text-xs font-medium text-warning">
-                Le percentuali sommano a {totalPercent}% — dovrebbero essere 100%
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="mt-3 text-xs text-muted-foreground">
-            Aggiungi corsi al progetto per calcolare i costi indiretti disponibili.
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function AllocationRow({
-  label,
-  description,
-  percent,
-  total,
-  onChange,
-  color,
-}: {
-  label: string
-  description: string
-  percent: number
-  total: number
-  onChange: (value: number) => void
-  color: string
-}) {
-  const amount = total * (percent / 100)
-
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between">
-        <div>
-          <span className="text-sm font-medium">{label}</span>
-          <p className="text-[10px] text-muted-foreground">{description}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            value={percent}
-            onChange={(e) => onChange(Number(e.target.value))}
-            min={0}
-            max={100}
-            className="w-14 rounded-md border border-border px-2 py-1 text-right text-sm outline-none focus:border-primary"
-          />
-          <span className="text-xs text-muted-foreground">%</span>
-          <span className="w-24 text-right text-sm font-medium">{fmtEur(amount)}</span>
-        </div>
-      </div>
-      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-        <div
-          className={`h-full rounded-full ${color} transition-all`}
-          style={{ width: `${Math.min(percent, 100)}%` }}
-        />
       </div>
     </div>
   )

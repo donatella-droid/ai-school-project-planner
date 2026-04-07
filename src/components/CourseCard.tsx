@@ -1,5 +1,5 @@
 import { useProjectStore, type ProjectCourse } from '@/stores/project-store'
-import { costoTotaleCorso, breakdownCorso, fmtEur } from '@/lib/costs'
+import { costoTotaleCorso, fmtEur, COSTO_ORA_PERCORSO, COSTO_ORA_LABORATORIO } from '@/lib/costs'
 import { CATALOG } from '@/lib/catalog'
 
 interface Props {
@@ -10,8 +10,8 @@ interface Props {
 
 export function CourseCard({ course, projectId, onRemove }: Props) {
   const updateCourse = useProjectStore((s) => s.updateCourse)
-  const breakdown = breakdownCorso(course.type, course.hours)
   const total = costoTotaleCorso(course.type, course.hours)
+  const costoOra = course.type === 'P' ? COSTO_ORA_PERCORSO : COSTO_ORA_LABORATORIO
 
   const update = (updates: Partial<Omit<ProjectCourse, 'id'>>) => {
     updateCourse(projectId, course.id, updates)
@@ -48,7 +48,7 @@ export function CourseCard({ course, projectId, onRemove }: Props) {
         <div className="text-right">
           <div className="text-lg font-bold">{fmtEur(total)}</div>
           <div className="text-[10px] text-muted-foreground">
-            diretti {fmtEur(breakdown.costiDiretti)} + indiretti {fmtEur(breakdown.costiIndiretti)}
+            {course.hours}h × {fmtEur(costoOra)}/h
           </div>
         </div>
       </div>
