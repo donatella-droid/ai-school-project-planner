@@ -86,7 +86,8 @@ export function BudgetSummary({ project }: Props) {
     riepilogo.push([])
     riepilogo.push(['Budget massimo bando', MAX_PROGETTO])
     riepilogo.push(['Residuo', MAX_PROGETTO - totale])
-    riepilogo.push(['% laboratori su totale', quotaLab / 100])
+    riepilogo.push(['% utilizzato', `${percentUsed.toFixed(1)}%`])
+    riepilogo.push(['% laboratori su totale', `${quotaLab.toFixed(1)}%`])
 
     const wsRiepilogo = XLSX.utils.aoa_to_sheet(riepilogo)
     wsRiepilogo['!cols'] = [{ wch: 30 }, { wch: 18 }, { wch: 8 }, { wch: 10 }]
