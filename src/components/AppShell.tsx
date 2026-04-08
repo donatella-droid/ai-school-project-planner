@@ -36,8 +36,8 @@ export function AppShell() {
             <nav className="flex gap-1">
               {([
                 ['corsi', 'Corsi'],
-                ['budget', 'Budget'],
                 ['tecnologie', 'Tecnologie'],
+                ['budget', 'Budget'],
                 ['testi', 'Testi'],
                 ['riferimenti', 'Riferimenti'],
               ] as [Tab, string][]).map(([id, label]) => (

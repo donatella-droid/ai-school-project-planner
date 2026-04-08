@@ -2,8 +2,7 @@ import type { SchoolProject } from '@/stores/project-store'
 import { useProjectStore } from '@/stores/project-store'
 import { CoursePicker } from './CoursePicker'
 import { CourseCard } from './CourseCard'
-import { BudgetSummary } from './BudgetSummary'
-import { ValidationPanel } from './ValidationPanel'
+import { BudgetSummary, ValidationCompact, IndirectCostsInfo } from './BudgetSummary'
 import { NarrativeGenerator } from './NarrativeGenerator'
 import { ReferenceLibrary } from './ReferenceLibrary'
 import { TechnologyPanel } from './TechnologyPanel'
@@ -77,7 +76,8 @@ export function ProjectEditor({ project, activeTab }: Props) {
         <div className="space-y-4">
           <BudgetSummary project={project} />
           <FemQuote project={project} />
-          <ValidationPanel courses={project.courses} />
+          <ValidationCompact courses={project.courses} />
+          <IndirectCostsInfo courses={project.courses} />
         </div>
       )}
 
