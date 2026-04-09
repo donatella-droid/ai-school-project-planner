@@ -315,6 +315,12 @@ export function FemQuote({ project }: Props) {
       txt('Le attività formative saranno erogate secondo il cronoprogramma concordato con l\'istituzione scolastica, in coerenza con le tempistiche previste dal progetto approvato sulla piattaforma "Futura PNRR — Gestione Progetti".', { size: 18, color: '444444' }),
       spacer(200),
 
+      // Condizioni di pagamento
+      txt('Condizioni di pagamento', { bold: true, size: 20 }),
+      txt('30% dell\'importo alla conferma dell\'incarico, con pagamento entro 30 giorni Data Fattura', { size: 18, color: '444444' }),
+      txt('70% dell\'importo al termine delle attività, con pagamento entro 30 giorni Data Fattura', { size: 18, color: '444444' }),
+      spacer(200),
+
       // Validità preventivo
       txt('Validità del preventivo', { bold: true, size: 20 }),
       txt('Il presente preventivo ha validità di 60 giorni dalla data di emissione. Decorso tale termine, FEM si riserva il diritto di aggiornare le condizioni economiche.', { size: 18, color: '444444' }),

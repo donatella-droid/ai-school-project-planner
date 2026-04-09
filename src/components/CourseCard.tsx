@@ -92,13 +92,21 @@ export function CourseCard({ course, projectId, onRemove }: Props) {
         </div>
         <div>
           <label className="mb-0.5 block text-[10px] text-muted-foreground">Partecipanti</label>
-          <input
-            type="number"
-            value={course.participants}
-            onChange={(e) => update({ participants: Math.max(1, Number(e.target.value)) })}
-            min={1}
-            className="w-16 rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-primary"
-          />
+          {(() => {
+            const minPart = course.type === 'P' ? 10 : 5
+            return (
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  value={course.participants}
+                  onChange={(e) => update({ participants: Math.max(minPart, Number(e.target.value)) })}
+                  min={minPart}
+                  className="w-16 rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-primary"
+                />
+                <span className="text-[9px] text-muted-foreground">min {minPart}</span>
+              </div>
+            )
+          })()}
         </div>
         <div>
           <label className="mb-0.5 block text-[10px] text-muted-foreground">Tipo</label>
@@ -106,7 +114,12 @@ export function CourseCard({ course, projectId, onRemove }: Props) {
             value={course.type}
             onChange={(e) => {
               const newType = e.target.value as 'P' | 'L'
-              update({ type: newType, ...(newType === 'L' ? { isFormazioneFormatori: false } : {}) })
+              const minPart = newType === 'P' ? 10 : 5
+              update({
+                type: newType,
+                ...(newType === 'L' ? { isFormazioneFormatori: false } : {}),
+                participants: Math.max(minPart, course.participants),
+              })
             }}
             className="rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-primary bg-background"
           >
