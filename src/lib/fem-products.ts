@@ -22,10 +22,24 @@ export const FEM_PRODUCTS: FemProduct[] = [
     priceLabel: '7.900 € (IVA inclusa)',
   },
   {
-    id: 'ai4l',
-    name: 'AI for Learning',
+    id: 'ai4l-1y',
+    name: 'AI for Learning — 1 anno',
     description: 'Pacchetto full, tutta scuola (docenti e studenti) — 100 crediti a docente',
-    price: 3500,
-    priceLabel: '3.500 € (IVA inclusa)',
+    price: 3600,
+    priceLabel: '3.600 € (IVA inclusa)',
+  },
+  {
+    id: 'ai4l-2y',
+    name: 'AI for Learning — 2 anni',
+    description: 'Pacchetto full, tutta scuola (docenti e studenti) — 100 crediti a docente',
+    price: 6900,
+    priceLabel: '6.900 € (IVA inclusa)',
+  },
+  {
+    id: 'ai4l-3y',
+    name: 'AI for Learning — 3 anni',
+    description: 'Pacchetto full, tutta scuola (docenti e studenti) — 100 crediti a docente',
+    price: 9600,
+    priceLabel: '9.600 € (IVA inclusa)',
   },
 ]
