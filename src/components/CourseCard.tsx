@@ -58,9 +58,11 @@ export function CourseCard({ course, projectId, onRemove }: Props) {
           <label className="mb-0.5 block text-[10px] text-muted-foreground">Ore</label>
           {course.catalogId ? (
             (() => {
-              const defaultH = CATALOG.find(c => c.id === course.catalogId)?.defaultHours ?? course.hours
+              const catalogEntry = CATALOG.find(c => c.id === course.catalogId)
+              const defaultH = catalogEntry?.defaultHours ?? course.hours
+              const allowsLab = catalogEntry?.allowedTypes === 'L' || catalogEntry?.allowedTypes === 'P/L'
               const minH = Math.max(1, defaultH - 2)
-              const maxH = defaultH + 3
+              const maxH = allowsLab ? Math.max(defaultH + 3, 10) : defaultH + 3
               return (
                 <div className="flex items-center gap-1">
                   <input
