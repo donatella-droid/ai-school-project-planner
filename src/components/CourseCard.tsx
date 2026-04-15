@@ -60,9 +60,8 @@ export function CourseCard({ course, projectId, onRemove }: Props) {
             (() => {
               const catalogEntry = CATALOG.find(c => c.id === course.catalogId)
               const defaultH = catalogEntry?.defaultHours ?? course.hours
-              const allowsLab = catalogEntry?.allowedTypes === 'L' || catalogEntry?.allowedTypes === 'P/L'
               const minH = Math.max(1, defaultH - 2)
-              const maxH = allowsLab ? Math.max(defaultH + 3, 10) : defaultH + 3
+              const maxH = Math.max(defaultH + 3, 10)
               return (
                 <div className="flex items-center gap-1">
                   <input
