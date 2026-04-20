@@ -67,7 +67,7 @@ export function FemQuote({ project }: Props) {
       ['Data', new Date().toLocaleDateString('it-IT')],
       [],
       ['FORMAZIONE'],
-      ['Titolo corso', 'Tipologia', 'Descrizione', 'Ore', 'Imponibile (no IVA)'],
+      ['Titolo corso', 'Tipologia', 'Descrizione', 'Ore', 'Partecipanti', 'Imponibile (no IVA)'],
     ]
 
     for (const c of femCourses) {
@@ -79,10 +79,11 @@ export function FemQuote({ project }: Props) {
         tipo,
         shortAbstract(getAbstract(c.catalogId)),
         c.hours,
+        c.participants,
         costoDirettoCorso(c.type, c.hours),
       ])
     }
-    rows.push(['', '', '', 'Subtotale formazione', totaleCorsiFem])
+    rows.push(['', '', '', '', 'Subtotale formazione', totaleCorsiFem])
     rows.push(['', '', '', '', '(esente IVA art. 10 DPR 633/72)'])
     rows.push([])
 
@@ -180,14 +181,15 @@ export function FemQuote({ project }: Props) {
         const abstract = shortAbstract(getAbstract(c.catalogId), 200)
         return [
           new TableRow({ cantSplit: true, children: [
-            mkCell(c.name, 45, { bold: true }),
-            mkCell(tipo, 22),
-            mkCell(`${c.hours}h`, 8, { align: AlignmentType.CENTER }),
+            mkCell(c.name, 38, { bold: true }),
+            mkCell(tipo, 19),
+            mkCell(`${c.hours}h`, 7, { align: AlignmentType.CENTER }),
+            mkCell(`${c.participants}`, 11, { align: AlignmentType.CENTER }),
             mkCell(fmtEur(costoDirettoCorso(c.type, c.hours)), 25, { align: AlignmentType.RIGHT }),
           ] }),
           new TableRow({ cantSplit: true, children: [
             new TableCell({
-              columnSpan: 4,
+              columnSpan: 5,
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: thinBorder,
               children: [new Paragraph({
@@ -205,12 +207,12 @@ export function FemQuote({ project }: Props) {
         new Table({
           layout: TableLayoutType.FIXED,
           width: { size: 100, type: WidthType.PERCENTAGE },
-          columnWidths: [4500, 2200, 800, 2500],
+          columnWidths: [3800, 1900, 700, 1100, 2500],
           rows: [
-            new TableRow({ cantSplit: true, children: [hdr('Corso', 45), hdr('Tipologia', 22), hdr('Ore', 8), hdr('Imponibile', 25)] }),
+            new TableRow({ cantSplit: true, children: [hdr('Corso', 38), hdr('Tipologia', 19), hdr('Ore', 7), hdr('Partecipanti', 11), hdr('Imponibile', 25)] }),
             ...courseRows,
             new TableRow({ cantSplit: true, children: [
-              new TableCell({ columnSpan: 3, width: { size: 75, type: WidthType.PERCENTAGE }, borders: thinBorder, children: [
+              new TableCell({ columnSpan: 4, width: { size: 75, type: WidthType.PERCENTAGE }, borders: thinBorder, children: [
                 new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { before: 40, after: 40 }, children: [new TextRun({ text: 'Subtotale formazione', bold: true, size: 20, font: F })] }),
               ] }),
               mkCell(fmtEur(totaleCorsiFem), 25, { bold: true, align: AlignmentType.RIGHT }),
@@ -477,6 +479,7 @@ export function FemQuote({ project }: Props) {
                   <th className="px-3 py-2 text-left font-medium">Corso</th>
                   <th className="px-3 py-2 text-left font-medium">Tipologia</th>
                   <th className="px-3 py-2 text-right font-medium">Ore</th>
+                  <th className="px-3 py-2 text-right font-medium">Partecipanti</th>
                   <th className="px-3 py-2 text-right font-medium">Imponibile</th>
                 </tr>
               </thead>
@@ -500,12 +503,13 @@ export function FemQuote({ project }: Props) {
                         </span>
                       </td>
                       <td className="px-3 py-2 text-right">{c.hours}h</td>
+                      <td className="px-3 py-2 text-right">{c.participants}</td>
                       <td className="px-3 py-2 text-right font-mono">{fmtEur(costoDirettoCorso(c.type, c.hours))}</td>
                     </tr>
                   )
                 })}
                 <tr className="border-t border-border bg-muted/50 font-medium">
-                  <td colSpan={3} className="px-3 py-2 text-right text-xs">Subtotale formazione</td>
+                  <td colSpan={4} className="px-3 py-2 text-right text-xs">Subtotale formazione</td>
                   <td className="px-3 py-2 text-right font-mono">{fmtEur(totaleCorsiFem)}</td>
                 </tr>
               </tbody>
