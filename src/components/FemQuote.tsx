@@ -40,6 +40,7 @@ export function FemQuote({ project }: Props) {
   const femTechWithPrices = includedFemTech.map((t) => {
     const product = FEM_PRODUCTS.find((p) => p.name === t.name)
     return {
+      code: product?.code ?? '',
       name: t.name,
       description: product?.description ?? '',
       priceIvato: product?.price ?? 0,
@@ -67,14 +68,17 @@ export function FemQuote({ project }: Props) {
       ['Data', new Date().toLocaleDateString('it-IT')],
       [],
       ['FORMAZIONE'],
-      ['Titolo corso', 'Tipologia', 'Descrizione', 'Ore', 'Partecipanti', 'Imponibile (no IVA)'],
+      ['Codice', 'Titolo corso', 'Tipologia', 'Descrizione', 'Ore', 'Partecipanti', 'Imponibile (no IVA)'],
     ]
 
     for (const c of femCourses) {
       const tipo = c.type === 'P'
         ? (c.isFormazioneFormatori ? 'Percorso (P) — Formazione formatori' : 'Percorso (P)')
         : 'Laboratorio (L)'
+      const catalogCode = CATALOG.find((cc) => cc.id === c.catalogId)?.code ?? ''
+      const codice = catalogCode ? `${catalogCode}-${c.type}` : ''
       rows.push([
+        codice,
         c.name,
         tipo,
         shortAbstract(getAbstract(c.catalogId)),
@@ -83,39 +87,39 @@ export function FemQuote({ project }: Props) {
         costoDirettoCorso(c.type, c.hours),
       ])
     }
-    rows.push(['', '', '', '', 'Subtotale formazione', totaleCorsiFem])
-    rows.push(['', '', '', '', '(esente IVA art. 10 DPR 633/72)'])
+    rows.push(['', '', '', '', '', 'Subtotale formazione', totaleCorsiFem])
+    rows.push(['', '', '', '', '', '(esente IVA art. 10 DPR 633/72)'])
     rows.push([])
 
     if (femTechWithPrices.length > 0) {
       rows.push(['PIATTAFORME E LICENZE'])
-      rows.push(['Prodotto', 'Descrizione', '', 'Imponibile', 'IVA 22%', 'Totale IVA incl.'])
+      rows.push(['Codice', 'Prodotto', 'Descrizione', '', 'Imponibile', 'IVA 22%', 'Totale IVA incl.'])
       for (const t of femTechWithPrices) {
-        rows.push([t.name, t.description, '', t.imponibile, t.iva, t.totale])
+        rows.push([t.code, t.name, t.description, '', t.imponibile, t.iva, t.totale])
       }
-      rows.push(['', '', 'Subtotale licenze', totaleTechImponibile, totaleTechIva, totaleTechIvato])
+      rows.push(['', '', '', 'Subtotale licenze', totaleTechImponibile, totaleTechIva, totaleTechIvato])
       rows.push([])
     }
 
     if (customCosts.length > 0) {
       rows.push(['VOCI AGGIUNTIVE'])
-      rows.push(['Voce', '', '', '', 'Importo'])
+      rows.push(['', 'Voce', '', '', '', '', 'Importo'])
       for (const c of customCosts) {
-        rows.push([c.title, '', '', '', c.amount])
+        rows.push(['', c.title, '', '', '', '', c.amount])
       }
-      rows.push(['', '', '', 'Subtotale voci aggiuntive', totaleCustomCosts])
+      rows.push(['', '', '', '', 'Subtotale voci aggiuntive', '', totaleCustomCosts])
       rows.push([])
     }
 
     rows.push([])
-    rows.push(['', '', '', 'TOTALE IMPONIBILE', totalePreventivo])
+    rows.push(['', '', '', '', 'TOTALE IMPONIBILE', '', totalePreventivo])
     if (totaleTechIva > 0) {
-      rows.push(['', '', '', 'IVA 22% (solo licenze)', totaleTechIva])
-      rows.push(['', '', '', 'TOTALE CON IVA', totaleConIva])
+      rows.push(['', '', '', '', 'IVA 22% (solo licenze)', '', totaleTechIva])
+      rows.push(['', '', '', '', 'TOTALE CON IVA', '', totaleConIva])
     }
 
     const ws = XLSX.utils.aoa_to_sheet(rows)
-    ws['!cols'] = [{ wch: 45 }, { wch: 35 }, { wch: 50 }, { wch: 8 }, { wch: 18 }, { wch: 18 }]
+    ws['!cols'] = [{ wch: 16 }, { wch: 45 }, { wch: 35 }, { wch: 50 }, { wch: 8 }, { wch: 14 }, { wch: 18 }]
     XLSX.utils.book_append_sheet(wb, ws, 'Preventivo FEM')
 
     XLSX.writeFile(wb, `preventivo-fem-${project.schoolName.replace(/\s+/g, '-').toLowerCase()}.xlsx`)
@@ -232,23 +236,24 @@ export function FemQuote({ project }: Props) {
         new Table({
           layout: TableLayoutType.FIXED,
           width: { size: 100, type: WidthType.PERCENTAGE },
-          columnWidths: [2500, 4500, 1500, 1500],
+          columnWidths: [1500, 2000, 4000, 1250, 1250],
           rows: [
-            new TableRow({ cantSplit: true, children: [hdr('Prodotto', 25), hdr('Descrizione', 45), hdr('Imponibile', 15), hdr('IVA 22%', 15)] }),
+            new TableRow({ cantSplit: true, children: [hdr('Codice', 15), hdr('Prodotto', 20), hdr('Descrizione', 40), hdr('Imponibile', 12), hdr('IVA 22%', 13)] }),
             ...femTechWithPrices.map((t) =>
               new TableRow({ cantSplit: true, children: [
-                mkCell(t.name, 25, { bold: true }),
-                mkCell(t.description, 45, { fontSize: 18 }),
-                mkCell(fmtEur(t.imponibile), 15, { align: AlignmentType.RIGHT }),
-                mkCell(fmtEur(t.iva), 15, { align: AlignmentType.RIGHT }),
+                mkCell(t.code, 15, { fontSize: 16 }),
+                mkCell(t.name, 20, { bold: true }),
+                mkCell(t.description, 40, { fontSize: 18 }),
+                mkCell(fmtEur(t.imponibile), 12, { align: AlignmentType.RIGHT }),
+                mkCell(fmtEur(t.iva), 13, { align: AlignmentType.RIGHT }),
               ] })
             ),
             new TableRow({ cantSplit: true, children: [
-              new TableCell({ columnSpan: 2, width: { size: 70, type: WidthType.PERCENTAGE }, borders: thinBorder, children: [
+              new TableCell({ columnSpan: 3, width: { size: 75, type: WidthType.PERCENTAGE }, borders: thinBorder, children: [
                 new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { before: 40, after: 40 }, children: [new TextRun({ text: 'Subtotale licenze', bold: true, size: 20, font: F })] }),
               ] }),
-              mkCell(fmtEur(totaleTechImponibile), 15, { bold: true, align: AlignmentType.RIGHT }),
-              mkCell(fmtEur(totaleTechIva), 15, { bold: true, align: AlignmentType.RIGHT }),
+              mkCell(fmtEur(totaleTechImponibile), 12, { bold: true, align: AlignmentType.RIGHT }),
+              mkCell(fmtEur(totaleTechIva), 13, { bold: true, align: AlignmentType.RIGHT }),
             ] }),
           ],
         }),
@@ -531,6 +536,7 @@ export function FemQuote({ project }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted text-xs text-muted-foreground">
+                  <th className="px-3 py-2 text-left font-medium">Codice</th>
                   <th className="px-3 py-2 text-left font-medium">Prodotto</th>
                   <th className="px-3 py-2 text-left font-medium">Descrizione</th>
                   <th className="px-3 py-2 text-right font-medium">Imponibile</th>
@@ -540,6 +546,7 @@ export function FemQuote({ project }: Props) {
               <tbody>
                 {femTechWithPrices.map((t) => (
                   <tr key={t.name} className="border-t border-border">
+                    <td className="px-3 py-2 font-mono text-xs">{t.code}</td>
                     <td className="px-3 py-2 font-medium">{t.name}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{t.description}</td>
                     <td className="px-3 py-2 text-right font-mono">{fmtEur(t.imponibile)}</td>
@@ -547,7 +554,7 @@ export function FemQuote({ project }: Props) {
                   </tr>
                 ))}
                 <tr className="border-t border-border bg-muted/50 font-medium">
-                  <td colSpan={2} className="px-3 py-2 text-right text-xs">Subtotale licenze</td>
+                  <td colSpan={3} className="px-3 py-2 text-right text-xs">Subtotale licenze</td>
                   <td className="px-3 py-2 text-right font-mono">{fmtEur(totaleTechImponibile)}</td>
                   <td className="px-3 py-2 text-right font-mono">{fmtEur(totaleTechIva)}</td>
                 </tr>
