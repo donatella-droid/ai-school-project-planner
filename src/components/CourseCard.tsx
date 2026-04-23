@@ -1,4 +1,4 @@
-import { useProjectStore, type ProjectCourse } from '@/stores/project-store'
+import { useProjectStore, type ProjectCourse, type CourseModality, type CourseTarget, MODALITY_LABELS, TARGET_LABELS } from '@/stores/project-store'
 import { costoTotaleCorso, fmtEur, COSTO_ORA_PERCORSO, COSTO_ORA_LABORATORIO } from '@/lib/costs'
 import { CATALOG } from '@/lib/catalog'
 
@@ -118,7 +118,7 @@ export function CourseCard({ course, projectId, onRemove }: Props) {
               const minPart = newType === 'P' ? 10 : 5
               update({
                 type: newType,
-                ...(newType === 'L' ? { isFormazioneFormatori: false } : {}),
+                ...(newType === 'L' ? { isFormazioneFormatori: false, modality: 'presenza' } : {}),
                 participants: Math.max(minPart, course.participants),
               })
             }}
@@ -128,6 +128,45 @@ export function CourseCard({ course, projectId, onRemove }: Props) {
             <option value="L">Laboratorio (L)</option>
           </select>
         </div>
+        <div>
+          <label className="mb-0.5 block text-[10px] text-muted-foreground">Modalità</label>
+          {course.type === 'L' ? (
+            <div className="rounded-md border border-border bg-muted/40 px-2 py-1 text-sm text-muted-foreground">
+              Presenza
+            </div>
+          ) : (
+            <select
+              value={course.modality}
+              onChange={(e) => update({ modality: e.target.value as CourseModality })}
+              className="rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-primary bg-background"
+            >
+              {(['online', 'presenza', 'ibrido'] as CourseModality[]).map((m) => (
+                <option key={m} value={m}>{MODALITY_LABELS[m]}</option>
+              ))}
+            </select>
+          )}
+        </div>
+        <div>
+          <label className="mb-0.5 block text-[10px] text-muted-foreground">Target principale</label>
+          <select
+            value={course.targetAudience}
+            onChange={(e) => update({ targetAudience: e.target.value as CourseTarget })}
+            className="rounded-md border border-border px-2 py-1 text-sm outline-none focus:border-primary bg-background"
+          >
+            {(['docenti', 'personale', 'docenti-personale', 'docenti-studenti'] as CourseTarget[]).map((t) => (
+              <option key={t} value={t}>{TARGET_LABELS[t]}</option>
+            ))}
+          </select>
+        </div>
+        <label className="flex cursor-pointer items-center gap-1.5 text-xs">
+          <input
+            type="checkbox"
+            checked={course.summerExecution}
+            onChange={(e) => update({ summerExecution: e.target.checked })}
+            className="rounded"
+          />
+          Esecuzione estiva
+        </label>
         {course.type === 'P' && (
           <div className="flex items-center gap-1.5">
             <label className="flex cursor-pointer items-center gap-1.5 text-xs">

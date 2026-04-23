@@ -45,6 +45,9 @@ export function CoursePicker({ projectId, existingCourses }: Props) {
       hours: course.defaultHours,
       participants: type === 'P' ? 10 : 5,
       isFormazioneFormatori: false,
+      modality: type === 'L' ? 'presenza' : 'presenza',
+      targetAudience: 'docenti',
+      summerExecution: false,
       notes: '',
     })
   }
@@ -59,6 +62,9 @@ export function CoursePicker({ projectId, existingCourses }: Props) {
       hours: customHours,
       participants: customType === 'P' ? 10 : 5,
       isFormazioneFormatori: false,
+      modality: customType === 'L' ? 'presenza' : 'presenza',
+      targetAudience: 'docenti',
+      summerExecution: false,
       notes: '',
     })
     setCustomName('')

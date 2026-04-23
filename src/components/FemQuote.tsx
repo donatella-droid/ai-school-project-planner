@@ -1,4 +1,6 @@
 import type { SchoolProject } from '@/stores/project-store'
+import { MODALITY_LABELS, TARGET_LABELS } from '@/stores/project-store'
+import { PROVINCES } from '@/lib/provinces'
 import { costoDirettoCorso, fmtEur } from '@/lib/costs'
 import { CATALOG } from '@/lib/catalog'
 import { FEM_PRODUCTS } from '@/lib/fem-products'
@@ -64,11 +66,13 @@ export function FemQuote({ project }: Props) {
     const rows: (string | number)[][] = [
       ['PREVENTIVO FEM — Future Education Modena'],
       ['Per', project.schoolName],
+      ['Provincia', project.provincia ? `${project.provincia} — ${PROVINCES.find((p) => p.sigla === project.provincia)?.provincia ?? ''}` : '—'],
       ['Progetto', project.projectTitle],
+      ['Codice commessa', project.commessaCode || '—'],
       ['Data', new Date().toLocaleDateString('it-IT')],
       [],
       ['FORMAZIONE'],
-      ['Codice', 'Titolo corso', 'Tipologia', 'Descrizione', 'Ore', 'Partecipanti', 'Imponibile (no IVA)'],
+      ['Codice', 'Titolo corso', 'Tipologia', 'Modalità', 'Target', 'Estate', 'Descrizione', 'Ore', 'Partecipanti', 'Imponibile (no IVA)'],
     ]
 
     for (const c of femCourses) {
@@ -81,14 +85,17 @@ export function FemQuote({ project }: Props) {
         codice,
         c.name,
         tipo,
+        MODALITY_LABELS[c.modality],
+        TARGET_LABELS[c.targetAudience],
+        c.summerExecution ? 'Sì' : 'No',
         shortAbstract(getAbstract(c.catalogId)),
         c.hours,
         c.participants,
         costoDirettoCorso(c.type, c.hours),
       ])
     }
-    rows.push(['', '', '', '', '', 'Subtotale formazione', totaleCorsiFem])
-    rows.push(['', '', '', '', '', '(esente IVA art. 10 DPR 633/72)'])
+    rows.push(['', '', '', '', '', '', '', '', 'Subtotale formazione', totaleCorsiFem])
+    rows.push(['', '', '', '', '', '', '', '', '', '(esente IVA art. 10 DPR 633/72)'])
     rows.push([])
 
     if (femTechWithPrices.length > 0) {
@@ -173,7 +180,9 @@ export function FemQuote({ project }: Props) {
 
       // Project info
       txt(`Per: ${project.schoolName}`, { size: 22 }),
+      ...(project.provincia ? [txt(`Provincia: ${project.provincia} — ${PROVINCES.find((p) => p.sigla === project.provincia)?.provincia ?? ''}`, { size: 22 })] : []),
       txt(`Progetto: ${project.projectTitle}`, { size: 22 }),
+      ...(project.commessaCode ? [txt(`Codice commessa: ${project.commessaCode}`, { size: 22 })] : []),
       txt(`Data: ${today}`, { size: 22 }),
       spacer(200),
     ]
@@ -183,6 +192,7 @@ export function FemQuote({ project }: Props) {
       const courseRows = femCourses.flatMap((c) => {
         const tipo = c.type === 'P' ? (c.isFormazioneFormatori ? 'Percorso (P) — Form. formatori' : 'Percorso (P)') : 'Laboratorio (L)'
         const abstract = shortAbstract(getAbstract(c.catalogId), 200)
+        const meta = `Modalità: ${MODALITY_LABELS[c.modality]} · Target: ${TARGET_LABELS[c.targetAudience]}${c.summerExecution ? ' · Esecuzione estiva' : ''}`
         return [
           new TableRow({ cantSplit: true, children: [
             mkCell(c.name, 38, { bold: true }),
@@ -196,10 +206,16 @@ export function FemQuote({ project }: Props) {
               columnSpan: 5,
               width: { size: 100, type: WidthType.PERCENTAGE },
               borders: thinBorder,
-              children: [new Paragraph({
-                spacing: { before: 20, after: 20 },
-                children: [new TextRun({ text: abstract, size: 16, font: F, italics: true, color: '888888' })],
-              })],
+              children: [
+                new Paragraph({
+                  spacing: { before: 20, after: 20 },
+                  children: [new TextRun({ text: meta, size: 16, font: F, bold: true, color: '555555' })],
+                }),
+                new Paragraph({
+                  spacing: { before: 20, after: 20 },
+                  children: [new TextRun({ text: abstract, size: 16, font: F, italics: true, color: '888888' })],
+                }),
+              ],
             }),
           ] }),
         ]
@@ -320,6 +336,9 @@ export function FemQuote({ project }: Props) {
       // Termini di esecuzione
       txt('Termini di esecuzione', { bold: true, size: 20 }),
       txt('Le attività formative saranno erogate secondo il cronoprogramma concordato con l\'istituzione scolastica, in coerenza con le tempistiche previste dal progetto approvato sulla piattaforma "Futura PNRR — Gestione Progetti".', { size: 18, color: '444444' }),
+      ...(femCourses.some((c) => c.summerExecution)
+        ? [txt('Alcuni corsi sono previsti in esecuzione estiva, come indicato in tabella.', { size: 18, color: '444444', italic: true })]
+        : []),
       spacer(200),
 
       // Condizioni di pagamento
@@ -471,6 +490,26 @@ export function FemQuote({ project }: Props) {
         </div>
       </div>
 
+      {/* Meta */}
+      {(project.commessaCode || project.provincia) && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md bg-muted/30 px-3 py-2 text-xs">
+          {project.provincia && (
+            <span>
+              <span className="text-muted-foreground">Provincia: </span>
+              <span className="font-medium">
+                {project.provincia} — {PROVINCES.find((p) => p.sigla === project.provincia)?.provincia}
+              </span>
+            </span>
+          )}
+          {project.commessaCode && (
+            <span>
+              <span className="text-muted-foreground">Commessa: </span>
+              <span className="font-mono font-medium">{project.commessaCode}</span>
+            </span>
+          )}
+        </div>
+      )}
+
       {/* FEM Courses */}
       {femCourses.length > 0 && (
         <div>
@@ -498,6 +537,13 @@ export function FemQuote({ project }: Props) {
                     <tr key={c.id} className="border-t border-border align-top">
                       <td className="px-3 py-2">
                         <div className="font-medium">{c.name}</div>
+                        <div className="mt-0.5 flex flex-wrap gap-1 text-[10px]">
+                          <span className="rounded bg-muted px-1.5 py-0.5">{MODALITY_LABELS[c.modality]}</span>
+                          <span className="rounded bg-muted px-1.5 py-0.5">{TARGET_LABELS[c.targetAudience]}</span>
+                          {c.summerExecution && (
+                            <span className="rounded bg-area-1/10 px-1.5 py-0.5 font-medium text-area-1">Estate</span>
+                          )}
+                        </div>
                         <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{abstract}</div>
                       </td>
                       <td className="px-3 py-2">

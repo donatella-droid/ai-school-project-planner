@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export type CourseType = 'P' | 'L'
+export type CourseModality = 'online' | 'presenza' | 'ibrido'
+export type CourseTarget = 'docenti' | 'personale' | 'docenti-personale' | 'docenti-studenti'
 
 export interface ProjectCourse {
   id: string
@@ -12,7 +14,23 @@ export interface ProjectCourse {
   hours: number
   participants: number
   isFormazioneFormatori: boolean
+  modality: CourseModality
+  targetAudience: CourseTarget
+  summerExecution: boolean
   notes: string
+}
+
+export const MODALITY_LABELS: Record<CourseModality, string> = {
+  online: 'Online',
+  presenza: 'Presenza',
+  ibrido: 'Ibrido',
+}
+
+export const TARGET_LABELS: Record<CourseTarget, string> = {
+  'docenti': 'Docenti',
+  'personale': 'Personale scolastico',
+  'docenti-personale': 'Docenti & personale',
+  'docenti-studenti': 'Docenti & studenti',
 }
 
 export interface TechnologyItem {
@@ -35,6 +53,8 @@ export interface SchoolProject {
   projectTitle: string
   region: string
   isMezzogiorno: boolean
+  commessaCode: string
+  provincia: string
   courses: ProjectCourse[]
   technologies: TechnologyItem[]
   customCosts: CustomCostItem[]
@@ -91,6 +111,8 @@ export const useProjectStore = create<ProjectStore>()(
               projectTitle,
               region: '',
               isMezzogiorno: false,
+              commessaCode: '',
+              provincia: '',
               courses: [],
               technologies: [],
               customCosts: [],
@@ -277,7 +299,7 @@ export const useProjectStore = create<ProjectStore>()(
     }),
     {
       name: 'ai-school-project-planner',
-      version: 2,
+      version: 5,
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as Record<string, unknown>
         if (version === 0) {
@@ -294,10 +316,39 @@ export const useProjectStore = create<ProjectStore>()(
             ...p,
             customCosts: (p.customCosts as unknown[]) ?? [],
           }))
-          // Remove old indirectCosts field
           for (const p of state.projects as Record<string, unknown>[]) {
             delete p.indirectCosts
           }
+        }
+        if (version <= 2) {
+          const projects = (state.projects ?? []) as Record<string, unknown>[]
+          state.projects = projects.map((p) => ({
+            ...p,
+            commessaCode: (p.commessaCode as string) ?? '',
+          }))
+        }
+        if (version <= 3) {
+          const projects = (state.projects ?? []) as Record<string, unknown>[]
+          state.projects = projects.map((p) => {
+            delete (p as Record<string, unknown>).summerAvailability
+            const courses = ((p.courses as unknown[]) ?? []) as Record<string, unknown>[]
+            return {
+              ...p,
+              courses: courses.map((c) => ({
+                ...c,
+                modality: (c.modality as string) ?? 'presenza',
+                targetAudience: (c.targetAudience as string) ?? 'docenti',
+                summerExecution: (c.summerExecution as boolean) ?? false,
+              })),
+            }
+          })
+        }
+        if (version <= 4) {
+          const projects = (state.projects ?? []) as Record<string, unknown>[]
+          state.projects = projects.map((p) => ({
+            ...p,
+            provincia: (p.provincia as string) ?? '',
+          }))
         }
         return state as unknown as ProjectStore
       },
