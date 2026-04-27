@@ -390,28 +390,8 @@ export const CATALOG: CatalogCourse[] = [
   },
 
   // === AREA 5: Gli strumenti ===
-  {
-    id: 'AI-FEM5-01',
-    code: 'AI-FEM5-01',
-    area: 5,
-    areaName: AREA_NAMES[5],
-    name: 'AI for Learning: la piattaforma pedagogicamente intelligente per la progettazione didattica',
-    defaultHours: 10,
-    allowedTypes: 'L',
-    target: 'Docenti',
-    abstract: 'Piattaforma FEM proprietaria per la progettazione didattica con intelligenza artificiale, validata pedagogicamente e testata sul campo.',
-  },
-  {
-    id: 'AI-FEM5-02',
-    code: 'AI-FEM5-02',
-    area: 5,
-    areaName: AREA_NAMES[5],
-    name: 'LINDA: intelligenza artificiale a supporto della comprensione del testo, della lettura e dell\'analisi testuale',
-    defaultHours: 10,
-    allowedTypes: 'P/L',
-    target: 'Docenti / Studenti',
-    abstract: 'Piattaforma FEM proprietaria di AI a supporto della comprensione del testo, della lettura e dell\'analisi testuale.',
-  },
+  // NOTA: le piattaforme FEM (AI for Learning, LINDA) NON sono corsi del catalogo formativo.
+  // Sono licenze edtech, gestite nel tab "Tecnologie" tramite FEM_PRODUCTS in src/lib/fem-products.ts.
 ]
 
 export function getCoursesByArea(area: number): CatalogCourse[] {

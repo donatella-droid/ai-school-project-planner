@@ -1,12 +1,57 @@
 import { REFERENCES } from '@/lib/references'
+import { CATALOG, AREA_NAMES } from '@/lib/catalog'
+import { FEM_PRODUCTS } from '@/lib/fem-products'
+import * as XLSX from 'xlsx'
+
+function exportCatalog() {
+  const wb = XLSX.utils.book_new()
+
+  const corsi = CATALOG.map((c) => ({
+    Codice: c.code,
+    Area: `${c.area} — ${AREA_NAMES[c.area]}`,
+    'Tipologia ammessa': c.allowedTypes,
+    'Ore default': c.defaultHours,
+    Target: c.target,
+    Nome: c.name,
+    Abstract: c.abstract,
+  }))
+  const wsCorsi = XLSX.utils.json_to_sheet(corsi)
+  wsCorsi['!cols'] = [{ wch: 14 }, { wch: 55 }, { wch: 18 }, { wch: 12 }, { wch: 35 }, { wch: 80 }, { wch: 120 }]
+  XLSX.utils.book_append_sheet(wb, wsCorsi, 'Corsi a catalogo')
+
+  const licenze = FEM_PRODUCTS.map((p) => ({
+    Codice: p.code,
+    Nome: p.name,
+    Descrizione: p.description,
+    'Prezzo (IVA inclusa)': p.price,
+  }))
+  const wsLicenze = XLSX.utils.json_to_sheet(licenze)
+  wsLicenze['!cols'] = [{ wch: 18 }, { wch: 35 }, { wch: 60 }, { wch: 18 }]
+  XLSX.utils.book_append_sheet(wb, wsLicenze, 'Licenze edtech')
+
+  XLSX.writeFile(wb, 'Catalogo-FEM-DM219.xlsx')
+}
 
 export function ReferenceLibrary() {
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-border bg-background p-5">
-        <h3 className="text-sm font-semibold">Riferimenti Normativi e Framework</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Documentazione di riferimento richiamata dal bando DM 219/2025. Clicca per accedere al documento completo.
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-semibold">Riferimenti Normativi e Framework</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Documentazione di riferimento richiamata dal bando DM 219/2025. Clicca per accedere al documento completo.
+            </p>
+          </div>
+          <button
+            onClick={exportCatalog}
+            className="shrink-0 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Scarica catalogo (Excel)
+          </button>
+        </div>
+        <p className="mt-2 text-[10px] text-muted-foreground">
+          L'export contiene tutti i corsi del catalogo formativo con codice e tipologia, e le licenze edtech disponibili (LINDA, AI for Learning).
         </p>
       </div>
 
